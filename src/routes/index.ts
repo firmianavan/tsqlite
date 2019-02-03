@@ -11,8 +11,19 @@ db.exec("create table if not exists usr (serial text, m INTEGER, d INTEGER, mi I
 db.exec("create unique index if not exists usr_unique on usr (serial, d)", errorHandler("creating unique index on usr"))
 db.exec("create index if not exists usr_m on usr (m)", errorHandler("creating month index on usr"))
 db.exec("create table if not exists balance (serial text primary key, total Integer,latest Integer, monthly INTEGER, daily INTEGER )", errorHandler("creating balance"))
-db.on("trace", function(sql: string):void {
-    console.log(sql);
+
+let t = new Date()
+t.setDate(26)
+t.setMonth(7)
+for (let i = 0; i<42; i++){
+    t.setDate(t.getDate()+1)
+    let m = 19*100 + t.getMonth()+1
+    let d = m*100 + t.getDate()
+    db.exec(`insert into usr (serial,m,d,mi) values ('t',${m},${d},1) `)
+}
+
+db.on("error", function(sql: string):void {
+    console.error("error ocurs executing : ", sql);
 })
 function errorHandler(msg: string): (this: Statement, err: Error | null) => void {
     return function (this: Statement, err: Error | null) {
@@ -59,7 +70,7 @@ function getherData(req: express.Request,res: express.Response){
         let day = req.query.strtime.substring(i * 10, i * 10 + 6)
         let minutes = req.query.strtime.substring(i * 10 + 6, i * 10 + 10)
         let mi = parseInt(minutes)
-        if ( mi < 60*8 ) continue
+        if ( mi > 60*8 ) mi = 60 * 8 //大于八小时按八小时算
         let d = parseInt(day)
         let delta = mi * k
         stmt.run(req.query.serial, d, d, mi, mi)
@@ -113,8 +124,30 @@ router.get('/login', function (req, res, next) {
     
 });
 router.get("/csv/download/:d", function (req, res) {
-    
-    let stmt = db.prepare("select serial as serial_no, m as month, sum(mi) as running_minutes  from usr where m = ? group by serial, m ", req.params['d'])
+    if (req.params['d'].length !== 4){
+        res.send("Invalid month, should like 1902")
+        return 
+    }
+    let target: number
+    try {
+        target = parseInt(req.params['d'])
+    } catch (error) {
+        res.send("Invalid month, should like 1902")
+        return 
+    }
+    let t = new Date()
+    t.setDate(1)
+    t.setMonth(target%100 - 1)
+    t.setFullYear(2000+ Math.floor(target/100))
+    let dayOfWeek = t.getDay() === 0? 7: t.getDay()
+    let offset = dayOfWeek - 1
+    let stmt = db.prepare("select serial as serial_no, m as month, sum(mi) as month_total, "
+        + " sum(case when (d%100 -1 +?)/7 = 0 then mi else 0 end) as week_1 , "
+        + " sum(case when (d%100 -1 +?)/7 = 1 then mi else 0 end) as week_2 , "
+        + " sum(case when (d%100 -1 +?)/7 = 2 then mi else 0 end) as week_3 , "
+        + " sum(case when (d%100 -1 +?)/7 = 3 then mi else 0 end) as week_4 , "
+        + " sum(case when (d%100 -1 +?)/7 = 4 then mi else 0 end) as week_5 , " 
+        + " sum(case when (d%100 -1 +?)/7 = 5 then mi else 0 end) as week_6  from usr where m = ? group by serial, m ",offset,offset,offset,offset,offset,offset, req.params['d'])
     stmt.all(function (err: Error | null, rows: any[]) {
         if (!!err) {
             res.write(`failed to fetch result, ${err}`)
