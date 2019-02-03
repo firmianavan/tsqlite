@@ -12,15 +12,15 @@ db.exec("create unique index if not exists usr_unique on usr (serial, d)", error
 db.exec("create index if not exists usr_m on usr (m)", errorHandler("creating month index on usr"))
 db.exec("create table if not exists balance (serial text primary key, total Integer,latest Integer, monthly INTEGER, daily INTEGER )", errorHandler("creating balance"))
 
-let t = new Date()
-t.setDate(26)
-t.setMonth(7)
-for (let i = 0; i<42; i++){
-    t.setDate(t.getDate()+1)
-    let m = 19*100 + t.getMonth()+1
-    let d = m*100 + t.getDate()
-    db.exec(`insert into usr (serial,m,d,mi) values ('t',${m},${d},1) `)
-}
+// let t = new Date()
+// t.setDate(26)
+// t.setMonth(7)
+// for (let i = 0; i<42; i++){
+//     t.setDate(t.getDate()+1)
+//     let m = 19*100 + t.getMonth()+1
+//     let d = m*100 + t.getDate()
+//     db.exec(`insert into usr (serial,m,d,mi) values ('t',${m},${d},1) `)
+// }
 
 db.on("error", function(sql: string):void {
     console.error("error ocurs executing : ", sql);
