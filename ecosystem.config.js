@@ -8,6 +8,9 @@ module.exports = {
             watch: false,
             max_memory_restart: '1G',
             log_date_format: 'YYYY-MM-DD HH:mm Z',
+            env: {
+                "PORT": "80"
+            }
         },
     ],
 };
