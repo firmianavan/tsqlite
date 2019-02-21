@@ -47,7 +47,7 @@ router.get('/time', function (req, res, next) {
     console.log(req.params)
     console.log(req.body)
     // res.render('index', { title: 'Express' });
-    let stmt = db.prepare("insert into usr (serial,m,d,mi) values (?,?/100,?,?) on conflict(serial,d) do update set mi = ?")
+    // let stmt = db.prepare("insert into usr (serial,m,d,mi) values (?,?/100,?,?) on conflict(serial,d) do update set mi = ?")
 
     let n = new Date()
     let ret = formatDate(n)
@@ -99,12 +99,14 @@ router.get('/login', function (req, res, next) {
     console.log(req.query)
     if (!req.query.strtime || !req.query.serial || ! req.query.checkcode){
         res.status(400).send("Invalid Params")
+        return
     }
     let md5 = crypto.createHash('md5');
     var hashed = md5.update(req.query.strtime).digest('hex')
     console.log(hashed)
     //加密狗未提供参数返回的规则，只得按照example原样返回
     if (hashed !== req.query.checkcode) {
+        console.error(`invalid check code: got ${req.query.checkcode}, expect ${hashed}`)
         res.send("<p>不相同")
         return
     }
