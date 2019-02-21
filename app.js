@@ -31,7 +31,7 @@ app.use(function(err, req, res, next) {
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  console.error("error occurs in req ",JSON.stringify(req), "error: ",err)
+  console.error("error occurs in req ",req.path, "error: ",err)
   try {
     res.end()
   } catch (error) {
